@@ -1,0 +1,142 @@
+.extension_body {
+    background-color: #101218;
+    color: #ffffff;
+    height: 20rem;
+    width: 15rem;
+    border: none;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.extension_TopText {
+    margin-top: 0.5rem;
+    color: #FFD700;
+    text-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; 
+    font-size: 2rem;
+}
+
+.extension_sessionLaunchButtonWrapper {
+    margin-top: 4rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.extension_sessionLaunchButton {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background-image: linear-gradient(120deg, #7afffb, #79fcff, #75eaff, #6eccff, #67a4ff, #5f73ff, #7156ff, #9b4eff, #c547ff, #e940ff, #ff3cfc, #ff3bf2);
+    background-position: top left;
+    background-size: 100%;
+    box-shadow: 0px 0px 400px rgba(255, 59, 242, 1), 0px 0px 200px rgba(255, 59, 242, 0.75), 0px 0px 100px rgba(255, 59, 242, 0.5), 0px 0px 50px rgba(255, 59, 242, 0.35), 0px 0px 25px rgba(255, 59, 242, 0.2);
+    border-radius: 100%;
+    border: none;
+    margin: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #000;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.extension_sessionLaunchButton:hover {
+    box-shadow: 0px 0px 400px rgba(122, 255, 251, 1), 0px 0px 200px rgba(122, 255, 251, 0.75), 0px 0px 100px rgba(122, 255, 251, 0.5), 0px 0px 50px rgba(122, 255, 251, 0.35), 0px 0px 25px rgba(122, 255, 251, 0.2);
+    padding: 20px;
+    background-size: 180%;
+    transition: all 0.3s ease;
+}
+
+.extension_sessionLaunchButton:active {
+    transform: scale(0.9);
+    transition: all 0.05s ease;
+}
+
+.extension_sessionLaunchButton::before {
+    position: absolute;
+    width: calc(100% + 20px);
+    height: calc(100% + 20px);
+    border: 1px solid rgba(255, 59, 242, 0.8);
+    border-radius: 100%;
+    pointer-events: none;
+    content: "";
+    transition: all 0.3s ease;
+}
+
+.extension_sessionLaunchButton:hover::before {
+    border: 1px solid rgba(122, 255, 251, 0.6);
+    width: calc(100% + 40px);
+    height: calc(100% + 40px);
+    transition: all 0.3s ease;
+}
+
+.extension_sessionLaunchButton:active::before {
+    width: calc(100% + 20px);
+    height: calc(100% + 20px);
+    transition: all 0.07s ease;
+}
+
+.extension_sessionLaunchButton::after {
+    position: absolute;
+    width: calc(100% + 40px);
+    height: calc(100% + 40px);
+    border: 2px dashed rgba(255, 59, 242, 0.4);
+    box-shadow: 0px 0px 100px rgba(122, 255, 251, 0.1);
+    border-radius: 100%;
+    pointer-events: none;
+    animation: rotate 30s linear infinite;
+    content: "";
+    transition: all 0.3s ease;
+}
+
+.extension_sessionLaunchButton:hover::after {
+    border: 2px dashed rgba(122, 255, 251, 0.3);
+    width: calc(100% + 80px);
+    height: calc(100% + 80px);
+    transition: all 0.3s ease;
+}
+
+.extension_sessionLaunchButton:active::after {
+    width: calc(100% + 40px);
+    height: calc(100% + 40px);
+    transition: all 0.07s ease;
+}
+
+.extension_NotSNOWEditorText{
+    display: flex;
+    text-wrap: balance;
+    margin-top: 6rem;
+    font-size: 18px;
+}
+
+.extension_madeBy {
+    position: absolute;
+    cursor: pointer;
+    margin: 0.5rem;
+    bottom: 0;
+    right: 0;
+    font-size: 0.9rem;
+    color: #A0AEC0;
+    text-decoration: none;
+}
+
+.extension_madeBy:hover {
+    text-decoration: underline;
+}
+
+
+@keyframes rotate {
+    to {
+        transform: rotateZ(-360deg);
+    }
+}

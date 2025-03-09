@@ -1,0 +1,24 @@
+{
+  "name": "ServiceNow Widget Editor VSCode Integration",
+  "version": "1.0.0",
+  "description": "This extension allows async editing of files in ServiceNow widget editor inside of VSCode for faster development speed.",
+  "manifest_version": 3,
+  "author": "Salah Alayoubi",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "ServiceNow Widget Editor VSCode Integration"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["styles.css"],
+      "js": ["scripts.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting"
+  ]
+}
