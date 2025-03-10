@@ -23,7 +23,11 @@
     "tabs",
     "activeTab",
     "storage",
+    "debugger",
     "scripting"
-  ],
-  "host_permissions": ["<all_urls>"]
+    ],
+  "host_permissions": ["<all_urls>"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://mobile.events.data.microsoft.com"
+  }
 }

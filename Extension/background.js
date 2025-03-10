@@ -1,5 +1,5 @@
 // Global Variables:
-const VSCODE_URL = "https://typehere.cc/";//"https://vscode.dev";
+const VSCODE_URL = "https://vscode.dev";
 var WIDGET_PAGE_ID = null;
 var EDITOR_PAGE_ID = null;
 var HTML = null;
@@ -18,6 +18,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "getCurrentTab") getCurrentTab().then((tab) => sendResponse(tab)).catch(_ => sendResponse(null));
     if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(_ => sendResponse(_));
+    if(message.type === "editorPageInit") editorPageInit().then(_ => sendResponse(EDITOR_PAGE_ID));
     return true;
 });
 
@@ -40,15 +41,25 @@ async function sessionLaunch(widgetPageId) {
 
     //create permissions on VSCode
 
+    //doOnPageDom(EDITOR_PAGE_ID, [], editorPageSetup);
+
+
+    // prevent default on left click with workspace and on hover do not show icons
+    // setings.json is read-only
+    // press F11 for full screen toggle.
+
+
+
+
+
+
+
+
 
     //create data on vscode
 
-
-    doOnPageDom(EDITOR_PAGE_ID, [EDITOR_PAGE_ID], (EDITOR_PAGE_ID) => alert(EDITOR_PAGE_ID));
-
-
-
     //create live code sync
+
 
 }
 
@@ -99,6 +110,7 @@ async function openVSCode() {
     const tabs = await chrome.tabs.query({});
     var currTab = await tabs.find(tab => tab.url && tab.url.includes(VSCODE_URL));
     if (currTab) {
+        await chrome.tabs.reload(currTab.id);
         await chrome.tabs.update(currTab.id, { active: true });
     } else {
         currTab = await chrome.tabs.create({ url: VSCODE_URL });
@@ -109,7 +121,6 @@ async function openVSCode() {
 
 async function waitForTabLoad(tabId) {
     while (true) {
-        await new Promise(res => setTimeout(res, 300));
         const tabs = await chrome.tabs.query({})
         const tab = await tabs.find(tab => tab.id === tabId)
         if (!tab) {
@@ -121,7 +132,13 @@ async function waitForTabLoad(tabId) {
         } else {
             console.warn("Tab Still Loading!");
         }
+        await new Promise(res => setTimeout(res, 300));
     }
+}
+
+
+async function editorPageInit(){
+
 }
 
 
@@ -129,6 +146,73 @@ async function waitForTabLoad(tabId) {
 
 
 
+
+async function editorPageSetup() {
+    document.querySelector("iframe").removeAttribute("sandbox");
+
+    const t = [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder");
+    console.log(t);
+    if (t) t.click();
+
+
+    const event = new KeyboardEvent('keydown', {
+        key: 'F11',
+        code: 'F11',
+        keyCode: 122,
+        which: 122,
+        bubbles: true,
+        cancelable: false
+    });
+
+    document.dispatchEvent(event);
+}
+
+
+
+
+
+
+
+
+//This function gets passed through a different DOM and cannot call outside functions
+function editorPermissions() {
+
+    //Make this run when on vs code open not here
+    //make vscode open them too
+    //make it clear prev files
+    //only ask once for folder?
+    //
+
+    async function requestFolderAcess() {
+        try {
+            const folderHandle = await window.showDirectoryPicker();
+            const entries = [];
+
+            for await (const entry of folderHandle.values()) {
+                entries.push(entry);
+            }
+            if (entries.length > 0) {
+                alert("Please select an empty folder.");
+                return;
+            }
+
+
+            const requiredFiles = ["index.html", "styles.css", "client.js", "server.js", "link.js"];
+            for (const fileName of requiredFiles) {
+                const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(`// Auto-generated file: ${fileName}`);
+                await writable.close();
+            }
+
+            alert("Folder opened and files created in VSCode.dev!");
+        } catch {
+            console.warn("Failed to setup Location Folder");
+        }
+    }
+
+    requestFolderAcess();
+}
 
 
 
@@ -159,28 +243,3 @@ function logger(pageId, message, type) {
         if (type === 'error') console.error(message);
     });
 }
-
-
-
-
-
-
-
-
-// TEMPPPP
-
-/*
-
-//On Button Click:
-async function sessionLaunchButton() {
-    //create data on vscode
-    //create live code sync
-
-    callDoOnPageDom(EditorPage.id, [], () => {
-        const t = document.getElementById("typingCanvas")
-        if (t) t.value = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-
-    });
-}
-
-*/
