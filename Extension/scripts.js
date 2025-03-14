@@ -2,29 +2,29 @@
 var currPage = null;
 
 //Main:
-async function widgetPageMain() {
+async function main() {
     currPage = await callGetCurrentTab();
     if (!isCurrentPageWidgtPage()) return;
 
     const launchButtonWrapper = document.getElementById("extension_sessionLaunchButtonWrapper");
     const launchButton = document.getElementById("extension_sessionLaunchButton");
     const wrongPageText = document.getElementById("extension_NotSNOWEditorText");
-
+    
     //Show Session Button
     if (launchButtonWrapper) launchButtonWrapper.style.display = "flex";
     if (wrongPageText) wrongPageText.style.display = "none";
 
     //Button Click Event Listener:
-    if (launchButton) launchButton.addEventListener("click", function () { sessionLaunchButton() });
-}
+    if (launchButton) launchButton.addEventListener("click", async function () {
+        await sessionLaunchButton();
+        
+        /*await doOnPageDom(currPage.id, [], () => {
+            [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder").click();
+        });
 
-
-async function EditorPageMain() {
-    currPage = await callGetCurrentTab();
-    if (!isCurrentPageEditorPage()) return;
-
-
-
+        await doOnPageDom(currPage.id, [], () => document.documentElement.requestFullscreen());
+        */
+    });
 
 }
 
@@ -37,18 +37,12 @@ function isCurrentPageWidgtPage() {
     return true;//TODO change this to return false after testing
 }
 
-//Checks if current tab is vsCode:
-function isCurrentPageEditorPage() {
-    if (!currPage || !currPage.url) return false;
-    return currPage.url === "https://vscode.dev/";
-}
-
 async function callGetCurrentTab() {
     return await new Promise((res) => chrome.runtime.sendMessage({ type: "getCurrentTab" }, (response) => res(response)));
 }
 
-function sessionLaunchButton() {
-    chrome.runtime.sendMessage({ type: "sessionLaunch", args: [currPage.id] });
+async function sessionLaunchButton() {
+    await chrome.runtime.sendMessage({ type: "sessionLaunch", args: [currPage.id] });
 }
 
 async function doOnPageDom(myTabId, myFuncArgs, myFunc) {
@@ -57,7 +51,4 @@ async function doOnPageDom(myTabId, myFuncArgs, myFunc) {
     }));
 }
 
-// For vscode.dv:
-
-widgetPageMain();
-EditorPageMain();
+main();

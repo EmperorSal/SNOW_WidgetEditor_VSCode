@@ -17,6 +17,11 @@
       "css": ["styles.css"],
       "js": ["scripts.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://vscode.dev/"],
+      "js": ["dotdev.js"],
+      "run_at": "document_idle"
     }
   ],
   "permissions": [
@@ -26,8 +31,5 @@
     "debugger",
     "scripting"
     ],
-  "host_permissions": ["<all_urls>"],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://mobile.events.data.microsoft.com"
-  }
+  "host_permissions": ["<all_urls>"]
 }

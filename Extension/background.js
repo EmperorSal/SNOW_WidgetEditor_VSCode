@@ -1,5 +1,5 @@
 // Global Variables:
-const VSCODE_URL = "https://vscode.dev";
+const VSCODE_URL = "https://vscode.dev"; //"https://typehere.cc/"
 var WIDGET_PAGE_ID = null;
 var EDITOR_PAGE_ID = null;
 var HTML = null;
@@ -17,8 +17,8 @@ chrome.runtime.onInstalled.addListener(() => {
 // Listen for messages from content scripts to save state
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "getCurrentTab") getCurrentTab().then((tab) => sendResponse(tab)).catch(_ => sendResponse(null));
-    if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(_ => sendResponse(_));
-    if(message.type === "editorPageInit") editorPageInit().then(_ => sendResponse(EDITOR_PAGE_ID));
+    if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(_ => sendResponse(EDITOR_PAGE_ID));
+    if (message.type === "editorPageInit") editorPageInit().then(_ => sendResponse(EDITOR_PAGE_ID));
     return true;
 });
 
@@ -36,8 +36,10 @@ async function sessionLaunch(widgetPageId) {
     //Get Data From Fields:
     TEST_SCRIPT = await doOnPageDom(WIDGET_PAGE_ID, [], getDataFromWidgetPage);
 
-    //open vscode
+    //open vscode:
     EDITOR_PAGE_ID = (await openVSCode()).id;
+
+    //await doOnPageDom(EDITOR_PAGE_ID, [], editorPermissions);
 
     //create permissions on VSCode
 
@@ -60,7 +62,9 @@ async function sessionLaunch(widgetPageId) {
 
     //create live code sync
 
-
+    setTimeout(() => {
+        return;
+    }, 500);
 }
 
 //Runs functions on targeted DOM:
@@ -137,7 +141,7 @@ async function waitForTabLoad(tabId) {
 }
 
 
-async function editorPageInit(){
+async function editorPageInit() {
 
 }
 
@@ -176,12 +180,12 @@ async function editorPageSetup() {
 
 //This function gets passed through a different DOM and cannot call outside functions
 function editorPermissions() {
+    console.log("in editorPermissions")
 
     //Make this run when on vs code open not here
     //make vscode open them too
     //make it clear prev files
     //only ask once for folder?
-    //
 
     async function requestFolderAcess() {
         try {
