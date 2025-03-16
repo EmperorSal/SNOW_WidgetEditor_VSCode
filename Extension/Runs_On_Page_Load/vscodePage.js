@@ -1,45 +1,97 @@
 // Global Variables:
 var currPage = null;
 
-//Main:
+// Main:
 async function main() {
-    currPage = await callGetCurrentTab();
-
+    if (!(await askBackendScript("didComeFromExtension"))) return;
+    currPage = await askBackendScript("getCurrentTab");
     await makeLoadDataButton();
 
-    const domLoadDiv = document.getElementById("extension_dataLoadingPopupWrapper");
-    const domLoadDataButtom = document.getElementById("extension_dataLoadingPopupButton");
-    const domLoadDataLoader = document.getElementById("extension_dataLoadingLoader");
+    /*
+        await doOnPageDom(currPage.id, [], () => {
+            
+        });
 
-    domLoadDataButtom.addEventListener('click', async () => {
-        document.documentElement.requestFullscreen();
+        await doOnPageDom(currPage.id, [], () => document.documentElement.requestFullscreen());
+    */
 
-        domLoadDataButtom.style.display = "none";
-        domLoadDataLoader.style.display = "flex";
+    const loadButton = document.getElementById("extension_dataLoadingPopupButton");
+    loadButton.addEventListener('click', async () => {
+        await setToLoading();
+        
+        
+        //await createFolder();
 
-        await new Promise(res => setTimeout(res, 5000));
+        //document.documentElement.requestFullscreen();
+        await [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder").click();
 
-        domLoadDiv.style.display = "none";
+
+        await loadingDone();
     });
 
+
+    window.addEventListener("beforeunload", async (e) => {
+        if (chrome?.runtime?.id) await askBackendScript("sessionEnd", ["vsCodePage"]);
+    });
 }
 
-async function callGetCurrentTab() {
-    return await new Promise((res) => chrome.runtime.sendMessage({ type: "getCurrentTab" }, (response) => res(response)));
+
+
+
+// My idea is that we will open two select files, the first will create and track and the second will show vscode where it is. 
+// there should be a loop as to opening files for both times so if they click cancel it throws an alert and does it again
+// make file select for track always go to /documents/ on file opener
+// we want a new loading and text to display what's happenning 
+// Then we need to save the files at least once so vscode can ask that persmission for trackign actual files to work
+// then we start file tracking and test it
+// bottom right absolute button to end session
+
+
+async function createFolder() {
+    const folderHandle = await window.showDirectoryPicker();
+    const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    
 }
 
 
 
-const observer = new MutationObserver(() => {
-    if (document.body && document.readyState === "complete") {
-        setTimeout(() => {
-            main();
-        }, 1000);
-        observer.disconnect();
-    }
-});
-observer.observe(document.documentElement, { childList: true, subtree: true });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function askBackendScript(myStr, myArgs=[]) {
+    return await new Promise((res) => chrome.runtime.sendMessage({ type: myStr, args: myArgs }, (response) => res(response)));
+}
+
+async function loadingDone() {
+    const loadDOM = document.getElementById("extension_dataLoadingPopupWrapper");
+    if (loadDOM) loadDOM.style.display = "none";
+}
+
+async function setToLoading() {
+    const button = document.getElementById("extension_dataLoadingPopupButton");
+    const loading = document.getElementById("extension_dataLoadingLoader");
+    if (button) button.style.display = "none";
+    if (loading) loading.style.display = "flex";
+}
 
 async function makeLoadDataButton() {
     let injecting = document.createElement('div');
@@ -261,3 +313,14 @@ async function makeLoadDataButton() {
     `;
     document.body.appendChild(injecting);
 }
+
+const vscodePageObserver = new MutationObserver(() => {
+    if (document.body && document.readyState === "complete") {
+        setTimeout(() => {
+            main();
+        }, 1000);
+        vscodePageObserver.disconnect();
+    }
+});
+
+if(document.URL === "https://vscode.dev/") vscodePageObserver.observe(document.documentElement, { childList: true, subtree: true });

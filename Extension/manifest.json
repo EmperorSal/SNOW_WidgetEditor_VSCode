@@ -14,13 +14,12 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "css": ["styles.css"],
-      "js": ["scripts.js"],
+      "js": ["Runs_On_Page_Load/widgetPage.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://vscode.dev/"],
-      "js": ["dotdev.js"],
+      "js": ["Runs_On_Page_Load/vscodePage.js"],
       "run_at": "document_idle"
     }
   ],

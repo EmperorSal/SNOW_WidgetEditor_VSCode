@@ -1,5 +1,5 @@
 // Global Variables:
-const VSCODE_URL = "https://vscode.dev"; //"https://typehere.cc/"
+const VSCODE_URL = "https://vscode.dev";
 var WIDGET_PAGE_ID = null;
 var EDITOR_PAGE_ID = null;
 var HTML = null;
@@ -7,18 +7,17 @@ var SCSS = null;
 var CLIENT_SCRIPT = null;
 var SERVER_SCRIPT = null;
 var LINK_SCRIPT = null;
+var IS_DEV_LAUNCHED_FROM_EXTENSION = false;
 //HERE REMOVE LATER:
 var TEST_SCRIPT = null;
 
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("Background Script For Extension Is Running!");
-});
 
 // Listen for messages from content scripts to save state
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "getCurrentTab") getCurrentTab().then((tab) => sendResponse(tab)).catch(_ => sendResponse(null));
-    if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(_ => sendResponse(EDITOR_PAGE_ID));
-    if (message.type === "editorPageInit") editorPageInit().then(_ => sendResponse(EDITOR_PAGE_ID));
+    if (message.type === "getCurrentTab") getCurrentTab().then((tab) => sendResponse(tab)).catch(() => sendResponse(null));
+    if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(() => sendResponse("Success")).catch(() => sendResponse(null));
+    if (message.type === "sessionEnd") sessionEnd(message.args[0]).then(() => sendResponse("Success")).catch(() => sendResponse(null));
+    if (message.type === "didComeFromExtension") sendResponse(IS_DEV_LAUNCHED_FROM_EXTENSION);
     return true;
 });
 
@@ -29,8 +28,16 @@ async function getCurrentTab() {
     return (tabs.length > 0) ? tabs[0] : null;
 }
 
+//End Session:
+async function sessionEnd(args) {
+    if(args === "vsCodePage") IS_DEV_LAUNCHED_FROM_EXTENSION = false;
+    return true;
+}
+
 //Launch Session:
 async function sessionLaunch(widgetPageId) {
+    IS_DEV_LAUNCHED_FROM_EXTENSION = true;
+
     WIDGET_PAGE_ID = widgetPageId;
 
     //Get Data From Fields:
@@ -39,32 +46,8 @@ async function sessionLaunch(widgetPageId) {
     //open vscode:
     EDITOR_PAGE_ID = (await openVSCode()).id;
 
-    //await doOnPageDom(EDITOR_PAGE_ID, [], editorPermissions);
+    //TODO LEFT OFF HERE
 
-    //create permissions on VSCode
-
-    //doOnPageDom(EDITOR_PAGE_ID, [], editorPageSetup);
-
-
-    // prevent default on left click with workspace and on hover do not show icons
-    // setings.json is read-only
-    // press F11 for full screen toggle.
-
-
-
-
-
-
-
-
-
-    //create data on vscode
-
-    //create live code sync
-
-    setTimeout(() => {
-        return;
-    }, 500);
 }
 
 //Runs functions on targeted DOM:
@@ -141,82 +124,6 @@ async function waitForTabLoad(tabId) {
 }
 
 
-async function editorPageInit() {
-
-}
-
-
-
-
-
-
-
-async function editorPageSetup() {
-    document.querySelector("iframe").removeAttribute("sandbox");
-
-    const t = [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder");
-    console.log(t);
-    if (t) t.click();
-
-
-    const event = new KeyboardEvent('keydown', {
-        key: 'F11',
-        code: 'F11',
-        keyCode: 122,
-        which: 122,
-        bubbles: true,
-        cancelable: false
-    });
-
-    document.dispatchEvent(event);
-}
-
-
-
-
-
-
-
-
-//This function gets passed through a different DOM and cannot call outside functions
-function editorPermissions() {
-    console.log("in editorPermissions")
-
-    //Make this run when on vs code open not here
-    //make vscode open them too
-    //make it clear prev files
-    //only ask once for folder?
-
-    async function requestFolderAcess() {
-        try {
-            const folderHandle = await window.showDirectoryPicker();
-            const entries = [];
-
-            for await (const entry of folderHandle.values()) {
-                entries.push(entry);
-            }
-            if (entries.length > 0) {
-                alert("Please select an empty folder.");
-                return;
-            }
-
-
-            const requiredFiles = ["index.html", "styles.css", "client.js", "server.js", "link.js"];
-            for (const fileName of requiredFiles) {
-                const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(`// Auto-generated file: ${fileName}`);
-                await writable.close();
-            }
-
-            alert("Folder opened and files created in VSCode.dev!");
-        } catch {
-            console.warn("Failed to setup Location Folder");
-        }
-    }
-
-    requestFolderAcess();
-}
 
 
 
@@ -228,11 +135,7 @@ function editorPermissions() {
 
 
 
-// Listen for tab switching
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-    const tabId = activeInfo.tabId;
-    console.log("Switched to Tab: ", tabId);
-});
+
 
 
 
@@ -247,3 +150,12 @@ function logger(pageId, message, type) {
         if (type === 'error') console.error(message);
     });
 }
+
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Background Script For Extension Is Running!");
+});
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    const tabId = activeInfo.tabId;
+    console.log("Switched to Tab: ", tabId);
+});
