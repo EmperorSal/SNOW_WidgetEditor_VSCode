@@ -9,25 +9,25 @@ async function main() {
     const launchButtonWrapper = document.getElementById("extension_sessionLaunchButtonWrapper");
     const launchButton = document.getElementById("extension_sessionLaunchButton");
     const wrongPageText = document.getElementById("extension_NotSNOWEditorText");
-    
+
     //Show Session Button
     if (launchButtonWrapper) launchButtonWrapper.style.display = "flex";
     if (wrongPageText) wrongPageText.style.display = "none";
 
+
     //Button Click Event Listener:
-    if (launchButton) launchButton.addEventListener("click",  async () => {
-
-        // ask for folder creation in empty or correct place.
-        // send it to server
-
+    if (launchButton) launchButton.addEventListener("click", async () => {
         askBackendScript("sessionLaunch", [currPage.id]);
+        window.close();
     });
 }
 
 
 
 
-async function askBackendScript(myStr, myArgs=[]) {
+
+
+async function askBackendScript(myStr, myArgs = []) {
     return await new Promise((res) => chrome.runtime.sendMessage({ type: myStr, args: myArgs }, (response) => res(response)));
 }
 

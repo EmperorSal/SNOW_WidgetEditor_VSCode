@@ -6,31 +6,38 @@ async function main() {
     currPage = await askBackendScript("getCurrentTab");
     if (!isCurrentPageWidgtPage()) return;
 
-    //do chrome.runtime.onMessage.addListener((message, sender, sendResponse) then update dom when backend tells you to.
-    
-
     window.addEventListener("beforeunload", async () => {
         if (chrome?.runtime?.id) await askBackendScript("sessionEnd", ["widgetPage"]);
     });
+
+
+
+    await sendDataToBackendScript();
+
+
+    try {
+        var keepGettingData = true;
+        while (keepGettingData) {
+            const data = await getDataFromBackendScript().catch((err) => {
+                keepGettingData = false;
+                console.warn(err);
+            })
+            await new Promise(_ => setTimeout(_, 1000));
+        }
+    } catch (err) {
+        console.warn(err);
+    }
 }
 
 
 
+async function sendDataToBackendScript(){
 
-async function createFolder() {
-    const folderHandle = await window.showDirectoryPicker();
-    const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(content);
-    await writable.close();
-    
 }
 
-
-
-
-
-
+async function getDataFromBackendScript() {
+    // return new Promise(res => askBackendScript("getDataToWidgetPage").then(data => res(data)).catch(() => res(null)));
+}
 
 
 
@@ -51,7 +58,7 @@ function isCurrentPageWidgtPage() {
 }
 
 
-async function askBackendScript(myStr, myArgs=[]) {
+async function askBackendScript(myStr, myArgs = []) {
     return await new Promise((res) => chrome.runtime.sendMessage({ type: myStr, args: myArgs }, (response) => res(response)));
 }
 
@@ -64,4 +71,4 @@ const widgetPageObserver = new MutationObserver(() => {
     }
 });
 
-if(document.URL !== "https://vscode.dev/") widgetPageObserver.observe(document.documentElement, { childList: true, subtree: true });
+if (document.URL !== "https://vscode.dev/") widgetPageObserver.observe(document.documentElement, { childList: true, subtree: true });

@@ -8,9 +8,9 @@ var CLIENT_SCRIPT = null;
 var SERVER_SCRIPT = null;
 var LINK_SCRIPT = null;
 var IS_DEV_LAUNCHED_FROM_EXTENSION = false;
+var inASession = false;
 //HERE REMOVE LATER:
 var TEST_SCRIPT = null;
-
 
 // Listen for messages from content scripts to save state
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -18,11 +18,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "sessionLaunch") sessionLaunch(message.args[0]).then(() => sendResponse("Success")).catch(() => sendResponse(null));
     if (message.type === "sessionEnd") sessionEnd(message.args[0]).then(() => sendResponse("Success")).catch(() => sendResponse(null));
     if (message.type === "didComeFromExtension") sendResponse(IS_DEV_LAUNCHED_FROM_EXTENSION);
+    // if (message.type === "getDataToWidgetPage") sendResponse("SENT DATA!");
     return true;
 });
 
 //Get current active tab:
-async function getCurrentTab() {
+async function getCurrentTab() {    
     if (!chrome || !chrome.tabs) return null;
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     return (tabs.length > 0) ? tabs[0] : null;
@@ -30,12 +31,16 @@ async function getCurrentTab() {
 
 //End Session:
 async function sessionEnd(args) {
-    if(args === "vsCodePage") IS_DEV_LAUNCHED_FROM_EXTENSION = false;
+    if(args === "vsCodePage"){
+        if(!inASession) IS_DEV_LAUNCHED_FROM_EXTENSION = false;
+        inASession = false;
+    }
     return true;
 }
 
 //Launch Session:
 async function sessionLaunch(widgetPageId) {
+    inASession = true;
     IS_DEV_LAUNCHED_FROM_EXTENSION = true;
 
     WIDGET_PAGE_ID = widgetPageId;
@@ -47,7 +52,6 @@ async function sessionLaunch(widgetPageId) {
     EDITOR_PAGE_ID = (await openVSCode()).id;
 
     //TODO LEFT OFF HERE
-
 }
 
 //Runs functions on targeted DOM:
@@ -111,7 +115,7 @@ async function waitForTabLoad(tabId) {
         const tabs = await chrome.tabs.query({})
         const tab = await tabs.find(tab => tab.id === tabId)
         if (!tab) {
-            console.error("No Tab Found in loading");
+            console.warn("No Tab Found in loading");
             break;
         }
         if (tab.status === "complete") {

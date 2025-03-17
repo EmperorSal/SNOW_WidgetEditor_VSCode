@@ -1,45 +1,123 @@
 // Global Variables:
 var currPage = null;
+var IMPORTED_HTML = "";
+var IMPORTED_CSS = "";
+var IMPORTED_CLIENT_JS = "";
+var IMPORTED_SERVER_JS = "";
+var IMPORTED_LINK_JS = "";
 
 // Main:
 async function main() {
     if (!(await askBackendScript("didComeFromExtension"))) return;
+    makeLoadDataButton();
     currPage = await askBackendScript("getCurrentTab");
-    await makeLoadDataButton();
-
-    /*
-        await doOnPageDom(currPage.id, [], () => {
-            
-        });
-
-        await doOnPageDom(currPage.id, [], () => document.documentElement.requestFullscreen());
-    */
-
     const loadButton = document.getElementById("extension_dataLoadingPopupButton");
-    loadButton.addEventListener('click', async () => {
-        await setToLoading();
-        
-        
-        //await createFolder();
-
-        //document.documentElement.requestFullscreen();
-        await [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder").click();
-
-
-        await loadingDone();
-    });
-
+    if(!loadButton) console.error("loadButton on session launch wasn't found");
 
     window.addEventListener("beforeunload", async (e) => {
         if (chrome?.runtime?.id) await askBackendScript("sessionEnd", ["vsCodePage"]);
     });
+
+    loadButton.addEventListener('click', async () => {
+        await isLoading(true);
+
+        const creationResult = await createFolder();
+        if (!creationResult) {
+            await isLoading(false);
+            return;
+        }
+
+        const openFolderButtonVSCODE = [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder");
+        if(openFolderButtonVSCODE) await openFolderButtonVSCODE.click();
+
+        const openFolderButtonObserver = new MutationObserver(async () => {
+            if (!openFolderButtonVSCODE || !document.contains(openFolderButtonVSCODE)) {
+                openFolderButtonObserver.disconnect();
+                await document.documentElement.requestFullscreen();
+                await allDataLoadingDone();
+            }
+        });
+        
+        if (openFolderButtonVSCODE) openFolderButtonObserver.observe(openFolderButtonVSCODE.parentNode, { childList: true });
+    });
 }
+
+
+
+async function createFolder() {
+    const filesToMake = [
+        { name: "index.html", content: IMPORTED_HTML },
+        { name: "styles.css", content: IMPORTED_CSS },
+        { name: "client.js", content: IMPORTED_CLIENT_JS },
+        { name: "server.js", content: IMPORTED_SERVER_JS },
+        { name: "link.js", content: IMPORTED_LINK_JS },
+    ];
+
+    try {
+        const dir = await window.showDirectoryPicker();
+        let existingFiles = [];
+        let nonMatchingFiles = [];
+
+        for await (const entry of dir.values()) {
+            if (entry.kind === "file") existingFiles.push(entry.name);
+        }
+
+        existingFiles.forEach(fileLooking => {
+            if (!filesToMake.some(file => file.name === fileLooking)) nonMatchingFiles.push(fileLooking);
+        });
+
+        if (nonMatchingFiles.length > 0) {
+            alert(`The selected folder contains unexpected files:\n${nonMatchingFiles.join(", ")}\nPlease select a different folder.`);
+            return false;
+        }
+
+        let conflictingFiles = existingFiles.filter(fileName => filesToMake.some(file => file.name === fileName));
+
+        if (conflictingFiles.length > 0) {
+            const confirmReplace = confirm(`The following files already exist and will be replaced:\n${conflictingFiles.join(", ")}\nDo you want to continue?`);
+            if (!confirmReplace) return false;
+        }
+
+        for (const file of filesToMake) {
+            const fileHandle = await dir.getFileHandle(file.name, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(file.content);
+            await writable.close();
+        }
+
+        alert("Files created successfully!");
+        return true;
+    } catch (err) {
+        if (err.name === "AbortError") {
+            alert("Please select a file directory");
+            return false;
+        }
+        console.error(err);
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 // My idea is that we will open two select files, the first will create and track and the second will show vscode where it is. 
 // there should be a loop as to opening files for both times so if they click cancel it throws an alert and does it again
+// change the size of extension to be bigger to fit alert
 // make file select for track always go to /documents/ on file opener
 // we want a new loading and text to display what's happenning 
 // Then we need to save the files at least once so vscode can ask that persmission for trackign actual files to work
@@ -47,14 +125,6 @@ async function main() {
 // bottom right absolute button to end session
 
 
-async function createFolder() {
-    const folderHandle = await window.showDirectoryPicker();
-    const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(content);
-    await writable.close();
-    
-}
 
 
 
@@ -76,21 +146,20 @@ async function createFolder() {
 
 
 
-
-async function askBackendScript(myStr, myArgs=[]) {
+async function askBackendScript(myStr, myArgs = []) {
     return await new Promise((res) => chrome.runtime.sendMessage({ type: myStr, args: myArgs }, (response) => res(response)));
 }
 
-async function loadingDone() {
+async function allDataLoadingDone() {
     const loadDOM = document.getElementById("extension_dataLoadingPopupWrapper");
     if (loadDOM) loadDOM.style.display = "none";
 }
 
-async function setToLoading() {
+async function isLoading(bool) {
     const button = document.getElementById("extension_dataLoadingPopupButton");
     const loading = document.getElementById("extension_dataLoadingLoader");
-    if (button) button.style.display = "none";
-    if (loading) loading.style.display = "flex";
+    if (button) button.style.display = (bool) ? "none" : "flex";
+    if (loading) loading.style.display = (bool) ? "flex" : "none";
 }
 
 async function makeLoadDataButton() {
@@ -323,4 +392,4 @@ const vscodePageObserver = new MutationObserver(() => {
     }
 });
 
-if(document.URL === "https://vscode.dev/") vscodePageObserver.observe(document.documentElement, { childList: true, subtree: true });
+if (document.URL === "https://vscode.dev/") vscodePageObserver.observe(document.documentElement, { childList: true, subtree: true });
