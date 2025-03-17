@@ -1,5 +1,8 @@
 {
-  "files.exclude": {
-    "**/.vscode": true
-  }
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 500,
+    "editor.fontSize": 14,
+    "editor.lineHeight": 22,
+    "editor.tabSize": 3,
+    "editor.formatOnSave": true
 }

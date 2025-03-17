@@ -12,7 +12,7 @@ async function main() {
     makeLoadDataButton();
     currPage = await askBackendScript("getCurrentTab");
     const loadButton = document.getElementById("extension_dataLoadingPopupButton");
-    if(!loadButton) console.error("loadButton on session launch wasn't found");
+    if (!loadButton) console.error("loadButton on session launch wasn't found");
 
     window.addEventListener("beforeunload", async (e) => {
         if (chrome?.runtime?.id) await askBackendScript("sessionEnd", ["vsCodePage"]);
@@ -21,26 +21,58 @@ async function main() {
     loadButton.addEventListener('click', async () => {
         await isLoading(true);
 
-        const creationResult = await createFolder();
-        if (!creationResult) {
+
+
+        // *** TODO ***
+        // Import files and Lock widget editor
+        // file tracks and update on widget page "OnSave Idea"
+        // *** Idea / Feature ***
+        // we want a new loading and text to display what's happenning, new page overlay on vscode?
+        // Make settings.json come from overlay and stored in localstorage
+        // bottom right absolute button to end session?
+
+
+
+
+
+
+
+        if (!await createFolder()) {
             await isLoading(false);
             return;
         }
 
+
+
+
+
+
+
+
         const openFolderButtonVSCODE = [...document.querySelectorAll('a.monaco-button')].find(a => a.textContent.trim() === "Open Folder");
-        if(openFolderButtonVSCODE) await openFolderButtonVSCODE.click();
+        if (openFolderButtonVSCODE) await openFolderButtonVSCODE.click();
+
+        await allDataLoadingDone();
 
         const openFolderButtonObserver = new MutationObserver(async () => {
             if (!openFolderButtonVSCODE || !document.contains(openFolderButtonVSCODE)) {
                 openFolderButtonObserver.disconnect();
                 await document.documentElement.requestFullscreen();
-                await allDataLoadingDone();
             }
         });
-        
+
         if (openFolderButtonVSCODE) openFolderButtonObserver.observe(openFolderButtonVSCODE.parentNode, { childList: true });
     });
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -50,34 +82,39 @@ async function createFolder() {
         { name: "styles.css", content: IMPORTED_CSS },
         { name: "client.js", content: IMPORTED_CLIENT_JS },
         { name: "server.js", content: IMPORTED_SERVER_JS },
-        { name: "link.js", content: IMPORTED_LINK_JS },
+        { name: "link.js", content: IMPORTED_LINK_JS }
     ];
 
     try {
-        const dir = await window.showDirectoryPicker();
+        const dir = await window.showDirectoryPicker({ startIn: 'documents' });
         let existingFiles = [];
         let nonMatchingFiles = [];
 
         for await (const entry of dir.values()) {
             if (entry.kind === "file") existingFiles.push(entry.name);
         }
-
         existingFiles.forEach(fileLooking => {
             if (!filesToMake.some(file => file.name === fileLooking)) nonMatchingFiles.push(fileLooking);
         });
-
         if (nonMatchingFiles.length > 0) {
             alert(`The selected folder contains unexpected files:\n${nonMatchingFiles.join(", ")}\nPlease select a different folder.`);
             return false;
         }
-
         let conflictingFiles = existingFiles.filter(fileName => filesToMake.some(file => file.name === fileName));
-
         if (conflictingFiles.length > 0) {
             const confirmReplace = confirm(`The following files already exist and will be replaced:\n${conflictingFiles.join(", ")}\nDo you want to continue?`);
             if (!confirmReplace) return false;
         }
 
+        //Code for settings
+        const vscodeDir = await dir.getDirectoryHandle('.vscode', { create: true });
+        const settingsFileHandle = await vscodeDir.getFileHandle("settings.json", { create: true });
+        const writableSettings = await settingsFileHandle.createWritable();
+        //TODO: get this from local storage and allow on popup page to edit?
+        await writableSettings.write('{"files.autoSave": "afterDelay","files.autoSaveDelay": 500,"editor.fontSize": 14,"editor.lineHeight": 23,"editor.tabSize": 3,"editor.formatOnSave": true}');
+        await writableSettings.close();
+
+        //Code for filesToMake
         for (const file of filesToMake) {
             const fileHandle = await dir.getFileHandle(file.name, { create: true });
             const writable = await fileHandle.createWritable();
@@ -96,55 +133,6 @@ async function createFolder() {
         return false;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// My idea is that we will open two select files, the first will create and track and the second will show vscode where it is. 
-// there should be a loop as to opening files for both times so if they click cancel it throws an alert and does it again
-// change the size of extension to be bigger to fit alert
-// make file select for track always go to /documents/ on file opener
-// we want a new loading and text to display what's happenning 
-// Then we need to save the files at least once so vscode can ask that persmission for trackign actual files to work
-// then we start file tracking and test it
-// bottom right absolute button to end session
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 async function askBackendScript(myStr, myArgs = []) {
     return await new Promise((res) => chrome.runtime.sendMessage({ type: myStr, args: myArgs }, (response) => res(response)));
